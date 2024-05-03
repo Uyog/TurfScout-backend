@@ -5,26 +5,28 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
-use App\Mail\ResetPassword;
-use Illuminate\Support\Facades\Mail;
+use Illuminate\Auth\Events\PasswordReset;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
-    public function register(Request $request){
-        $fields = $request->validate([
-            'name'=>'required',
-            'email'=>'required|string|unique:users,email',
-            'password'=>'required|string|confirmed',
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|confirmed|min:8',
 
         ]);
 
         $user = User::create([
-            'name'=>$fields['name'],
-            'email'=>$fields['email'],
-            'password'=>bcrypt($fields['password']),
-            
-            
+            'name' => $request['name'],
+            'email' => $request['email'],
+            'password' => Hash::make($request['password']),
+
+
         ]);
 
         $token = $user->createToken('myAppToken')->plainTextToken;
@@ -36,60 +38,37 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function login(Request $request){
-       
-        $fields = $request->validate([
-            'email'=>'required|string',
-            'password'=>'required|string',
-        ]);
-        
-        $user = User::where('email', $fields['email'])->first();
+    public function login(Request $request)
+    {
 
-        if(!$user||!Hash::check($fields['password'], $user->password)){
-            return response([
-                'message'=>'Bad Credentials!'
-            ], 401);
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            throw ValidationException::withMessages([
+                'email' => ['The Provided Credentials Are Incorrect.'],
+            ]);
         }
         $token = $user->createToken('myAppToken')->plainTextToken;
 
-        $response = [
+        return response()->json([
             'user' => $user,
-            'token' =>$token,
-        ];
-
-        return response($response, 201);
+            'token' => $token,
+        ], 201);
     }
 
-  public function logout(Request $request){
-    if ($request->user()){
+    public function logout(Request $request)
+    {
         $request->user()->tokens()->delete();
-        return response([
-            'message' => 'Logged Out Successfully!',
-        ],200);
-    }else{
-        return response([
-            'message' => 'Unauthenticated!',
-        ], 401);
+
+        return response()->json([
+            'message' => 'Logged out successfully',
+        ], 200);
     }
-  }
 
-  public function sendResetPasswordEmail(Request $request)
-  {
-      $user = User::where('email', $request->email)->first();
-
-      if (!$user){
-          return response()->json(['message' => 'User not found'],404);
-      }
-      $pin = mt_rand(100000, 999999);
-      $user->update(['reset_pin' => $pin]);
-
-      Mail::to($user->email)->send(new ResetPassword($pin));
-
-      return response()->json(['message' => 'Reset password email sent']);
-  }
-
-
-
- 
   
 }

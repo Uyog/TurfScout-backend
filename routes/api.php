@@ -7,8 +7,8 @@ use App\http\Controllers\PaymentsController;
 use App\http\Controllers\AuthController;
 use App\Http\Controllers\RefundController;
 use App\Http\Controllers\ReviewsController;
-use App\Http\Controllers\AdminController;
-use App\Http\Controllers\CreatorController;
+use App\Http\Controllers\ForgotPasswordController;
+use App\Http\Controllers\ResetPasswordController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +43,8 @@ Route::middleware('auth:sanctum')->group(function () {
 //PUBLIC APIs
 Route::post('/register',[AuthController::class, 'register']);
 Route::post('/login',[AuthController::class, 'login']);
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
 
 
 
@@ -53,8 +55,8 @@ Route::post("/turf/{id}",[TurfsController::class, 'updateTurf']);
 Route::delete("/turf/{id}",[TurfsController::class, 'deleteTurf']);
 
 
-//Route::post("/booking",[BookingsController::class, 'createBooking']);
-// Route::get("/booking",[BookingsController::class, 'readAllBookings']);
+Route::post("/booking",[BookingsController::class, 'createBooking']);
+Route::get("/booking",[BookingsController::class, 'readAllBookings']);
 Route::get("/booking/{id}",[BookingsController::class, 'readBooking']);
 Route::post("/booking/{id}",[BookingsController::class, 'updateBooking']);
 Route::delete("/booking/{id}",[BookingsController::class, 'deleteBooking']);

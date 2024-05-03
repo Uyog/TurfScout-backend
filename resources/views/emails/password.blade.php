@@ -1,12 +1,10 @@
-<x-mail::message>
-# Introduction
+<x-mail::message style="background-color: black; color: limegreen;">
+    # Introduction
 
-The body of your message.
+    <x-mail::button :url="''" style="background-color: limegreen; color: black;">
+        Button Text
+    </x-mail::button>
 
-<x-mail::button :url="''">
-Button Text
-</x-mail::button>
-
-Thanks,<br>
-{{ config('app.name') }}
+    Thanks,<br>
+    <span style="color: limegreen;">{{ config('app.name') }}</span>
 </x-mail::message>

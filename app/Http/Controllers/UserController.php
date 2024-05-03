@@ -4,41 +4,45 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class UserController extends Controller
 {
-    public function currentUser(Request $request)
+    public function currentUser()
     {
-        return response()->json($request->user());
+        $user = Auth::user();
+        return response()->json($user);
     }
 
     public function updateName(Request $request, $id)
-    {   
+    {
         $request->validate([
             'name' => 'required',
         ]);
 
-        $user = User::findOrFail($id);
-        if($user){
-            $user->update([
-                'name'=>$request->name,
-            ]);
-        }
-        else{
-            return response()->json("User doesn't exist With ID: ", $id);
+        $user = User::find($id);
+
+        if (!$user) {
+            return response()->json(["error" => "User not found with ID: " . $id], 404);
         }
 
+        $user->name = $request->input('name');
+        $user->save();
 
         return response()->json($user);
     }
 
-    public function deleteAccount(Request $request)
+    public function deleteAccount()
     {
-        $user = $request->user();
-        $user->delete();
-
-        return response()->json(null, 204);
-    }
-
+        $userId = Auth::id(); 
+        $user = User::find($userId); 
+    
+        if ($user) {
+            $user->delete();
+            return response()->json(null, 204);
+        } else {
+            return response()->json(["error" => "User not found"], 404);
+        }
+    } 
+        
 }
-
