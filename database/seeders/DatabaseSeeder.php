@@ -4,21 +4,31 @@ namespace Database\Seeders;
 
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class DatabaseSeeder extends Seeder
 {
     /**
      * Seed the application's database.
      */
-    public function run(): void
+    public function run()
     {
-        // \App\Models\User::factory(10)->create();
+        // Check if the role exists before creating it
+        $adminRole = Role::firstOrCreate(['name' => 'admin']);
+        $creatorRole = Role::firstOrCreate(['name' => 'creator']);
 
-        // \App\Models\User::factory()->create([
-        //     'name' => 'Test User',
-        //     'email' => 'test@example.com',
-        // ]);
+        // Permissions
+        $manageTurfsPermission = Permission::where('name', 'manage_turfs')->first();
+        if (!$manageTurfsPermission) {
+            $manageTurfsPermission = Permission::create(['name' => 'manage_turfs']);
+        }
 
-       
+        $createTurfsPermission = Permission::firstOrCreate(['name' => 'create_turfs']);
+        $updateTurfsPermission = Permission::firstOrCreate(['name' => 'update_turfs']);
+
+        // Assign permissions to roles
+        $adminRole->givePermissionTo($manageTurfsPermission);
+        $creatorRole->givePermissionTo([$createTurfsPermission, $updateTurfsPermission]);
     }
 }

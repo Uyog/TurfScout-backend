@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('turfs', function (Blueprint $table) {
             $table->id();
+            $table->unsignedBigInteger('creator_id')->nullable();
+            $table->foreign('creator_id')->references('id')->on('users')->onDelete('cascade');
             $table->string("turf_name");
             $table->string("location");
             $table->string("description");

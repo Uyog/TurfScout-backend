@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Turfs;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class TurfsController extends Controller
 {
+
     public function createTurf(Request $request){
 
         $request->validate([
@@ -20,6 +22,11 @@ class TurfsController extends Controller
         "image_path"=>"image|mimes:jpeg,png,jpg|max:2048"
          
         ]);
+
+        $user = Auth::user();
+        if (!$user || $user->role !== 'creator') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
  
         if($request->hasFile("image_path")){
             $filename=$request->file("image_path")->store("turfs", "public");
@@ -34,6 +41,7 @@ class TurfsController extends Controller
          "price_per_hour" =>$request->price_per_hour,
          "availability" =>$request->availability,
          "image_path" =>$filename,
+         "creator_id" => $user->id,
         ]);
  
         return response()->json($turf);
@@ -68,9 +76,6 @@ class TurfsController extends Controller
  
  public function updateTurf($id, Request $request){
 
-
-
-     try{
          $request->validate([
              "turf_name"=>"required",
              "location" =>"required",
@@ -81,12 +86,18 @@ class TurfsController extends Controller
              "image_path"=>"image|mimes:jpeg,png,jpg|max:2048"
          ]);
 
+         $user = Auth::user();
+         if (!$user || $user->role !== 'creator') {
+             return response()->json(['error' => 'Unauthorized'], 401);
+         }
+
          if($request->hasFile("image_path")){
-            $filename=$request->file("image_path")->store("turfs", "public");
-            
+            $filename=$request->file("image_path")->store("turfs", "public"); 
         }else{
             $filename = null;
         }
+       
+
          $turf = Turfs::findOrFail($id);
  
          if($turf){
@@ -95,7 +106,7 @@ class TurfsController extends Controller
              $turf->description = $request->description;
              $turf->amenities = $request->amenities;
              $turf->price_per_hour = $request->price_per_hour;
-             $turf->availability = $request->availbility;
+             $turf->availability = $request->availability;
              $turf->image_path = $filename;
              $turf->save();
  
@@ -104,19 +115,9 @@ class TurfsController extends Controller
          else{
              return response()->json("No Turf Was Found With The ID: ", $id);
          }
- 
-     }
-     catch(\Exception $e){
-         return response()->json([
-             'error' => 'Unable to Update Record!'
-         ],400);
-     }
  }
  
  public function deleteTurf($id){
-
-
-
      try{
          $turf = Turfs::findOrFail($id);
  

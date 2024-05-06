@@ -19,4 +19,9 @@ class Turfs extends Model
         "availability",
         "image_path",
     ];
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'creator_id');
+    }
 }

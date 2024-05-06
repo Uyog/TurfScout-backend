@@ -18,16 +18,19 @@ class AuthController extends Controller
             'name' => 'required',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:8',
-
+            'role' => 'required|in:user,creator',
         ]);
 
         $user = User::create([
             'name' => $request['name'],
             'email' => $request['email'],
             'password' => Hash::make($request['password']),
-
-
+            'role' => $request['role'],
+            
         ]);
+
+         // Assign appropriate permissions based on role
+       
 
         $token = $user->createToken('myAppToken')->plainTextToken;
 
@@ -35,6 +38,7 @@ class AuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'Bearer',
+            'user' => $user,
         ], 201);
     }
 
@@ -50,14 +54,18 @@ class AuthController extends Controller
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             throw ValidationException::withMessages([
-                'email' => ['The Provided Credentials Are Incorrect.'],
+                'email' => ['The Provided Credentials Are Incorrect!'],
             ]);
         }
         $token = $user->createToken('myAppToken')->plainTextToken;
 
+       
+
         return response()->json([
             'user' => $user,
+            'token_type' => 'Bearer',
             'token' => $token,
+            
         ], 201);
     }
 
