@@ -29,9 +29,6 @@ class AuthController extends Controller
             
         ]);
 
-         // Assign appropriate permissions based on role
-       
-
         $token = $user->createToken('myAppToken')->plainTextToken;
 
 
