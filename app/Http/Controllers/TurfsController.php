@@ -10,135 +10,106 @@ use Illuminate\Support\Facades\Storage;
 class TurfsController extends Controller
 {
 
-    public function createTurf(Request $request){
-
+    public function createTurf(Request $request)
+    {
         $request->validate([
-         "turf_name"=>"required",
-         "location"=>"required",
-        "description"=>"required",
-        "amenities"=>"required",
-        "price_per_hour"=>"required",
-        "availability"=>"required",
-        "image_path"=>"image|mimes:jpeg,png,jpg|max:2048"
-         
+            'name' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+            'description' => 'required|string',
+            'image' => 'image|mimes:jpeg,png,jpg|max:2048',
+            'price' => 'required|numeric',
         ]);
 
         $user = Auth::user();
         if (!$user || $user->role !== 'creator') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
- 
-        if($request->hasFile("image_path")){
-            $filename=$request->file("image_path")->store("turfs", "public");
-        }else{
-            $filename = null;
+
+        $imageUrl = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store("turfs", "public");
+            $imageUrl = Storage::url($imagePath);
         }
+
         $turf = Turfs::create([
-         "turf_name" =>$request->turf_name,
-         "location" =>$request->location,
-         "description" =>$request->description,
-         "amenities" =>$request->amenities,
-         "price_per_hour" =>$request->price_per_hour,
-         "availability" =>$request->availability,
-         "image_path" =>$filename,
-         "creator_id" => $user->id,
+            'name' => $request->name,
+            'location' => $request->location,
+            'description' => $request->description,
+            'image_url' => $imageUrl,
+            'price' => $request->price,
+            'creator_id' => $user->id,
         ]);
- 
-        return response()->json($turf);
- }
- 
- public function readAllTurfs(){
-     $turfs = Turfs::all();
-     if(!$turfs){
-         return response()->json("No Turf Was found");
-     } else {
-         return response()->json($turfs);
-     }
- }
- 
- public function readTurf($id){
-     try{
-         $turf = Turfs::findOrFail($id);
- 
-         if($turf){
-             return response()->json($turf);
-         }
-         else{
-             return response()->json("No Turf Was Found With The ID: ", $id);
-         }
-     }
-     catch(\Exception $e){
-         return response()->json([
-             'error' => 'Turf Does Not Exist With Such An ID'
-         ],400);
-     }
- }
- 
- public function updateTurf($id, Request $request){
 
-         $request->validate([
-             "turf_name"=>"required",
-             "location" =>"required",
-             "description" =>"required",
-             "amenities" =>"required",
-             "price_per_hour" =>"required",
-             "availability" =>"required",
-             "image_path"=>"image|mimes:jpeg,png,jpg|max:2048"
-         ]);
-
-         $user = Auth::user();
-         if (!$user || $user->role !== 'creator') {
-             return response()->json(['error' => 'Unauthorized'], 401);
-         }
-
-         if($request->hasFile("image_path")){
-            $filename=$request->file("image_path")->store("turfs", "public"); 
-        }else{
-            $filename = null;
+        return response()->json($turf, 201);
+    }
+ 
+    public function readAllTurfs()
+    {
+        $turfs = Turfs::all();
+        return $turfs->isEmpty()
+            ? response()->json("No Turf Was found", 404)
+            : response()->json($turfs);
+    }
+ 
+    public function readTurf($id)
+    {
+        try {
+            $turf = Turfs::findOrFail($id);
+            return response()->json($turf);
+        } catch (\Exception $e) {
+            return response()->json(["error" => "No Turf Was Found With The ID: {$id}"], 404);
         }
-       
+    }
+ 
+    public function updateTurf($id, Request $request)
+    {
+        $request->validate([
+            "name" => "required|string|max:255",
+            "location" => "required|string|max:255",
+            "description" => "required|string",
+            "image" => "image|mimes:jpeg,png,jpg|max:2048",
+            "price" => "required|numeric",
+        ]);
 
-         $turf = Turfs::findOrFail($id);
+        $user = Auth::user();
+        if (!$user || $user->role !== 'creator') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        try {
+            $turf = Turfs::findOrFail($id);
+
+            $imageUrl = $request->hasFile("image") ? Storage::url($request->file("image")->store("turfs", "public")) : $turf->image_url;
+
+            $turf->update([
+                'name' => $request->name,
+                'location' => $request->location,
+                'description' => $request->description,
+                'image_url' => $imageUrl,
+                'price' => $request->price,
+            ]);
+
+            return response()->json($turf);
+        } catch (\Exception $e) {
+            return response()->json(["error" => "No Turf Was Found With The ID: {$id}"], 404);
+        }
+    }
  
-         if($turf){
-             $turf->turf_name = $request->turf_name;
-             $turf->location = $request->location;
-             $turf->description = $request->description;
-             $turf->amenities = $request->amenities;
-             $turf->price_per_hour = $request->price_per_hour;
-             $turf->availability = $request->availability;
-             $turf->image_path = $filename;
-             $turf->save();
- 
-             return response()->json($turf);
-         }
-         else{
-             return response()->json("No Turf Was Found With The ID: ", $id);
-         }
- }
- 
- public function deleteTurf($id){
-     try{
-         $turf = Turfs::findOrFail($id);
- 
-         if($turf){
-             Turfs::destroy($id);
-             return response()->json("Record Has Been Successfully Deleted");
-         } else{
-             return response()->json("Record Does Not Exist With The ID:", $id);
-         }
-     }
-     catch(\Exception $e){
-         return response()->json([
-             'error' => 'Record Not Deleted!'
-         ],400);
- }
- }
+    public function deleteTurf($id)
+    {
+        try {
+            $turf = Turfs::findOrFail($id);
+            $turf->delete();
+            return response()->json("Record Has Been Successfully Deleted");
+        } catch (\Exception $e) {
+            return response()->json(["error" => "Record Does Not Exist With The ID: {$id}"], 404);
+        }
+    }
 
  public function search(Request $request)
 {
     $search = $request->input('search');
-    $turfs = Turfs::where('turf_name', 'LIKE', "%{$search}%")
+    $turfs = Turfs::where('name', 'LIKE', "%{$search}%")
                     ->orWhere('location', 'LIKE', "%{$search}%")
                     ->get();
     return response()->json($turfs);
@@ -151,8 +122,4 @@ public function getTurfImageUrl($filename)
     return $url;
     
 }
-
-
-
-
 }

@@ -11,17 +11,10 @@ class Turfs extends Model
     use HasFactory;
 
     protected $fillable = [
-        "turf_name",
+        "name",
         "location",
         "description",
-        "amenities",
-        "price_per_hour",
-        "availability",
-        "image_path",
+        "image_url",
+        "price",
     ];
-
-    public function creator()
-    {
-        return $this->belongsTo(User::class, 'creator_id');
-    }
 }

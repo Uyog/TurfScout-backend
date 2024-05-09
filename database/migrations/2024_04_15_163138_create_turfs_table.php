@@ -15,13 +15,11 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('creator_id')->nullable();
             $table->foreign('creator_id')->references('id')->on('users')->onDelete('cascade');
-            $table->string("turf_name");
+            $table->string("name");
+            $table->decimal('price', 10, 2);
             $table->string("location");
             $table->string("description");
-            $table->string("amenities");
-            $table->double("price_per_hour");
-            $table->string("availability");
-            $table->string("image_path")->nullable();
+            $table->string("image_url")->nullable();
             $table->timestamps();
         });
     }

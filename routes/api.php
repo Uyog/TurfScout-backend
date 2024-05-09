@@ -29,21 +29,22 @@ use Illuminate\Validation\UnauthorizedException;
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [UserController::class, 'currentUser']);
-    Route::post('user/{id}', [UserController::class, 'updateName']);
+    Route::post('/user/{id}', [UserController::class, 'updateName']);
     Route::delete('/user', [UserController::class, 'deleteAccount']);
     Route::post('/become-creator', [CreatorController::class, 'becomeCreator']);
 });
 
-Route::middleware(['auth:sanctum', 'role:creator'])->post('/turf', [TurfsController::class, 'createTurf']);
-Route::middleware(['auth:sanctum', 'role:creator'])->post('/turf/{id}', [TurfsController::class, 'updateTurf']);
-
+Route::middleware(['auth:sanctum', 'role:creator'])->group(function () {
+    Route::post('/turf', [TurfsController::class, 'createTurf']);
+    Route::post('/turf/{id}', [TurfsController::class, 'updateTurf']);
+});
 
 
 //PUBLIC APIs
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('password.email');
-Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('password.reset');
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('forgot-password');
+Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('reset_password');
 
 
 Route::post("/booking", [BookingsController::class, 'createBooking']);
