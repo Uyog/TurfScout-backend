@@ -20,7 +20,7 @@ class TurfsController extends Controller
             'price' => 'required|numeric',
         ]);
 
-        $user = Auth::user();
+        $user = $request->user();
         if (!$user || $user->role !== 'creator') {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
@@ -29,7 +29,7 @@ class TurfsController extends Controller
         if ($request->hasFile('image')) {
             $imagePath = $request->file('image')->store("turfs", "public");
             $imageUrl = Storage::url($imagePath);
-        }
+    }
 
         $turf = Turfs::create([
             'name' => $request->name,
@@ -40,15 +40,32 @@ class TurfsController extends Controller
             'creator_id' => $user->id,
         ]);
 
+        if (!$turf) {
+            return response()->json(['error' => 'Failed to create turf'], 500);
+        }
+
         return response()->json($turf, 201);
     }
  
-    public function readAllTurfs()
+    public function readAllTurfs(Request $request)
     {
-        $turfs = Turfs::all();
-        return $turfs->isEmpty()
-            ? response()->json("No Turf Was found", 404)
-            : response()->json($turfs);
+        $user = $request->user();
+        
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+    
+        if ($user->role !== 'creator') {
+            return response()->json(['error' => 'Forbidden'], 403);
+        }
+    
+        $turfs = Turfs::where('creator_id', $user->id)->get();
+        
+        if ($turfs->isEmpty()) {
+            return response()->json(['message' => 'No turfs found for the user'], 404);
+        }
+    
+        return response()->json($turfs);
     }
  
     public function readTurf($id)

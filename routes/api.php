@@ -9,7 +9,6 @@ use App\Http\Controllers\RefundController;
 use App\Http\Controllers\ReviewsController;
 use App\Http\Controllers\ForgotPasswordController;
 use App\Http\Controllers\ResetPasswordController;
-use App\Http\Controllers\CreatorController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -31,11 +30,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [UserController::class, 'currentUser']);
     Route::post('/user/{id}', [UserController::class, 'updateName']);
     Route::delete('/user', [UserController::class, 'deleteAccount']);
-    Route::post('/become-creator', [CreatorController::class, 'becomeCreator']);
+    Route::get('/turfs/search', [TurfsController::class, 'search']);
 });
 
 Route::middleware(['auth:sanctum', 'role:creator'])->group(function () {
     Route::post('/turf', [TurfsController::class, 'createTurf']);
+    Route::get('/turf', [TurfsController::class, 'readAllTurfs']);
     Route::post('/turf/{id}', [TurfsController::class, 'updateTurf']);
 });
 
@@ -74,4 +74,4 @@ Route::get("/refund/{id}", [RefundController::class, 'readRefund']);
 Route::post("/refund/{id}", [RefundController::class, 'updateRefund']);
 Route::delete("/refund/{id}", [RefundController::class, 'deleteRefund']);
 
-Route::get('/turfs/search', [TurfsController::class, 'search']);
+

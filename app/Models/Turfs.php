@@ -16,5 +16,6 @@ class Turfs extends Model
         "description",
         "image_url",
         "price",
+        "creator_id"
     ];
 }
