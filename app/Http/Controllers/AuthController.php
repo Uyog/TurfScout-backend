@@ -18,19 +18,18 @@ class AuthController extends Controller
             'name' => 'required',
             'email' => 'required|email|unique:users',
             'password' => 'required|confirmed|min:8',
-            'role' => 'required|in:user,creator',
+           
         ]);
 
         $user = User::create([
             'name' => $request['name'],
             'email' => $request['email'],
             'password' => Hash::make($request['password']),
-            'role' => $request['role'],
+            'role' => 'user', // Assign 'user' role by default
             
         ]);
 
         $token = $user->createToken('myAppToken')->plainTextToken;
-
 
         return response()->json([
             'access_token' => $token,
@@ -39,9 +38,35 @@ class AuthController extends Controller
         ], 201);
     }
 
+    public function registerFromOtherApp(Request $request)
+    {
+        $request->validate([
+            'name' => 'required',
+            'email' => 'required|email|unique:users',
+            'password' => 'required|confirmed|min:8',
+        ]);
+
+        $user = User::create([
+            'name' => $request['name'],
+            'email' => $request['email'],
+            'password' => Hash::make($request['password']),
+            'role' => 'creator', // Assign 'creator' role for registration from another app
+        ]);
+
+        $token = $user->createToken('myAppToken')->plainTextToken;
+
+        return response()->json([
+            'access_token' => $token,
+            'token_type' => 'Bearer',
+            'user' => $user,
+        ], 201);
+    }
+
+
+
+
     public function login(Request $request)
     {
-
         $request->validate([
             'email' => 'required|email',
             'password' => 'required',
@@ -64,6 +89,11 @@ class AuthController extends Controller
         ], 201);
     }
 
+
+
+
+
+    
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();
