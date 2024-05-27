@@ -16,5 +16,14 @@ class Bookings extends Model
         "total_price",
         "booking_status",
         "booking_time",
+        "ball",
+        "bib",
+        "rating",
+        "review",
     ];
+
+    protected $casts = [
+        'booking_time' => 'datetime',
+    ];
+
 }

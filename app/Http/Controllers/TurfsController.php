@@ -79,45 +79,44 @@ class TurfsController extends Controller
         }
     }
 
-    public function updateTurf($id, Request $request)
-    {
-        $request->validate([
-            "name" => "required|string|max:255",
-            "location" => "required|string|max:255",
-            "description" => "required|string",
-            "image" => "image|mimes:jpeg,png,jpg|max:2048",
-            "price" => "required|numeric",
+    public function updateTurf(Request $request, $id)
+{
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'location' => 'required|string|max:255',
+        'description' => 'required|string',
+        'image' => 'image|mimes:jpeg,png,jpg|max:2048',
+        'price' => 'required|numeric',
+    ]);
+
+    $user = Auth::user();
+    if (!$user || $user->role !== 'creator') {
+        return response()->json(['error' => 'Unauthorized'], 401);
+    }
+
+    try {
+        $turf = Turfs::findOrFail($id);
+
+        if ($request->hasFile('image')) {
+            $filename = Storage::url($request->file('image')->store('turfs', 'public'));
+        } else {
+            $filename = $turf->image_url;
+        }
+
+        $turf->update([
+            'name' => $request->name,
+            'location' => $request->location,
+            'description' => $request->description,
+            'image_url' => $filename,
+            'price' => $request->price,
         ]);
 
-        $user = Auth::user();
-        if (!$user || $user->role !== 'creator') {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        try {
-            $turf = Turfs::findOrFail($id);
-
-            $filename = $request->hasFile("image") ? Storage::url($request->file("image")->store("turfs", "public")) : $turf->image_url;
-
-            $turf->update([
-                'name' => $request->name,
-                'location' => $request->location,
-                'description' => $request->description,
-                'image_url' => $filename,
-                'price' => $request->price,
-            ]);
-
-            if ($request->hasFile('image_url')) {
-                $filename = $request->file('image_url')->store('turfs', 'public');
-            } else {
-                $filename = null;
-            }
-
-            return response()->json($turf);
-        } catch (\Exception $e) {
-            return response()->json(["error" => "No Turf Was Found With The ID: {$id}"], 404);
-        }
+        return response()->json($turf);
+    } catch (\Exception $e) {
+        return response()->json(['error' => 'No Turf Was Found With The ID: ' . $id], 404);
     }
+}
+
 
     public function deleteTurf($id)
     {

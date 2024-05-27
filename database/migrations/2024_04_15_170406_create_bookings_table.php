@@ -20,7 +20,11 @@ return new class extends Migration
             $table->string("duration");
             $table->double("total_price");
             $table->string("booking_status");
+            $table->unsignedInteger('rating')->nullable();
+            $table->text('review')->nullable();
             $table->dateTime("booking_time")->unique();
+            $table->unsignedInteger("ball")->default(0);
+            $table->unsignedInteger("bib")->default(0);
             $table->timestamps();
         });
     }

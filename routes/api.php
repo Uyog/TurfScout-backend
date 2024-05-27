@@ -32,12 +32,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/user', [UserController::class, 'deleteAccount']);
     Route::get('/turfs/search', [TurfsController::class, 'search']);
     Route::get('/turfs/images', [TurfsController::class, 'getTurfImageUrls']);
+    Route::post("/booking", [BookingsController::class, 'createBooking']);
+    Route::get("/booking", [BookingsController::class, 'readAllBookings']);
+    Route::get("/booking/{id}", [BookingsController::class, 'readBooking']);
+    Route::post("/booking/{id}", [BookingsController::class, 'updateBooking']);
+    Route::delete("/booking/{id}", [BookingsController::class, 'deleteBooking']);
 });
 
 Route::middleware(['auth:sanctum', 'role:creator'])->group(function () {
     Route::post('/turf', [TurfsController::class, 'createTurf']);
     Route::get('/turf', [TurfsController::class, 'readAllTurfs']);
-    Route::post('/turf/{id}', [TurfsController::class, 'updateTurf']);
+    Route::put('/turf/{id}', [TurfsController::class, 'updateTurf']);
+    Route::delete('/turf/{id}', [TurfsController::class, 'deleteTurf']);
 });
 
 
@@ -49,12 +55,6 @@ Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLink
 Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('reset_password');
 
 
-Route::post("/booking", [BookingsController::class, 'createBooking']);
-Route::get("/booking", [BookingsController::class, 'readAllBookings']);
-Route::get("/booking/{id}", [BookingsController::class, 'readBooking']);
-Route::post("/booking/{id}", [BookingsController::class, 'updateBooking']);
-Route::delete("/booking/{id}", [BookingsController::class, 'deleteBooking']);
-
 
 Route::post("/payment", [PaymentsController::class, 'createPayment']);
 Route::get("/payment", [PaymentsController::class, 'readAllPayments']);
@@ -62,12 +62,6 @@ Route::get("/payment/{id}", [PaymentsController::class, 'readPayment']);
 Route::post("/payment/{id}", [PaymentsController::class, 'updatePayment']);
 Route::delete("/payment/{id}", [PaymentsController::class, 'deletePayment']);
 
-
-Route::post("/review", [ReviewsController::class, 'createReview']);
-Route::get("/review", [ReviewsController::class, 'readAllReviews']);
-Route::get("/review/{id}", [ReviewsController::class, 'readReview']);
-Route::post("/review/{id}", [ReviewsController::class, 'updateReview']);
-Route::delete("/review/{id}", [ReviewsController::class, 'deleteReview']);
 
 
 Route::post("/refund", [RefundController::class, 'createRefund']);
