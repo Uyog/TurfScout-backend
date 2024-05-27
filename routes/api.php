@@ -31,6 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/{id}', [UserController::class, 'updateName']);
     Route::delete('/user', [UserController::class, 'deleteAccount']);
     Route::get('/turfs/search', [TurfsController::class, 'search']);
+    Route::get('/turfs/images', [TurfsController::class, 'getTurfImageUrls']);
 });
 
 Route::middleware(['auth:sanctum', 'role:creator'])->group(function () {

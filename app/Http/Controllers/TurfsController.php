@@ -27,14 +27,16 @@ class TurfsController extends Controller
         }
 
         $image = $request->file('image');
-        $imageName = time() . '.' . $image->getClientOriginalExtension();
-        $image->storeAs('public/turfs', $imageName);
+    $imageName = time() . '.' . $image->getClientOriginalExtension();
+    $imagePath = $image->storeAs('public/turfs', $imageName);
+
+        
 
         $turf = Turfs::create([
             'name' => $request->name,
             'location' => $request->location,
             'description' => $request->description,
-            'image_url' => 'storage/turfs/' . $imageName,
+            'image_url' => Storage::url('turfs/' . $imageName),
             'price' => $request->price,
             'creator_id' => $user->id,
         ]);
@@ -142,4 +144,7 @@ class TurfsController extends Controller
         $url = Storage::url("turfs/{$filename}");
         return $url;
     }
+
+    
 }
+
