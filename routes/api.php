@@ -31,12 +31,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/{id}', [UserController::class, 'updateName']);
     Route::delete('/user', [UserController::class, 'deleteAccount']);
     Route::get('/turfs/search', [TurfsController::class, 'search']);
+    Route::get('/turfs/{id}', [TurfsController::class, 'readTurf']);
     Route::get('/turfs/images', [TurfsController::class, 'getTurfImageUrls']);
     Route::post("/booking", [BookingsController::class, 'createBooking']);
-    Route::get("/booking", [BookingsController::class, 'readAllBookings']);
-    Route::get("/booking/{id}", [BookingsController::class, 'readBooking']);
-    Route::post("/booking/{id}", [BookingsController::class, 'updateBooking']);
-    Route::delete("/booking/{id}", [BookingsController::class, 'deleteBooking']);
+    Route::post('/booking/{id}/rating', [BookingsController::class, 'submitRating']);
 });
 
 Route::middleware(['auth:sanctum', 'role:creator'])->group(function () {

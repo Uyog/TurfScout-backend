@@ -13,19 +13,20 @@ return new class extends Migration
     {
         Schema::create('bookings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger("user_id");
-            $table->foreign("user_id")->references("id")->on("users");
-            $table->unsignedBigInteger("turf_id");
-            $table->foreign("turf_id")->references("id")->on("turfs");
-            $table->string("duration");
-            $table->double("total_price");
-            $table->string("booking_status");
+            $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('turf_id');
+            $table->integer('duration'); 
+            $table->double('total_price');
+            $table->string('booking_status');
             $table->unsignedInteger('rating')->nullable();
             $table->text('review')->nullable();
-            $table->dateTime("booking_time")->unique();
-            $table->unsignedInteger("ball")->default(0);
-            $table->unsignedInteger("bib")->default(0);
+            $table->dateTime('booking_time');
+            $table->dateTime('booking_end_time');
+            $table->unsignedInteger('ball')->default(0);
+            $table->unsignedInteger('bib')->default(0);
             $table->timestamps();
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('turf_id')->references('id')->on('turfs')->onDelete('cascade');
         });
     }
 

@@ -4,56 +4,69 @@ namespace App\Http\Controllers;
 
 use App\Models\Bookings;
 use Illuminate\Http\Request;
+use App\Models\Turfs;
 use Carbon\Carbon;
 use App\Notifications\BookingMadeNotification;
 use Illuminate\Validation\UnauthorizedException;
-
 
 class BookingsController extends Controller
 {
     public function createBooking(Request $request)
     {
-
         if (!$request->user()) {
             throw new UnauthorizedException('You must be logged in to book a turf!');
         }
 
         $request->validate([
             "turf_id" => "required|exists:turfs,id",
-            "booking_time" => "required",
-            "ball" => "numeric",
-            "bib" => "numeric",
+            "booking_time" => [
+                'required', 
+                'regex:/^(?:[01]\d|2[0-3]):[0-5]\d(?:\s?[APMapm]{2})?$/'
+            ], 
+            "ball" => "numeric|min:0",
+            "bib" => "numeric|min:0",
         ]);
 
+        $timeString = $request->input('booking_time');
 
-
+        try {
+            if (strpos($timeString, 'AM') !== false || strpos($timeString, 'PM') !== false) {
+                $bookingTime = Carbon::createFromFormat('h:i A', $timeString);
+            } else {
+                $bookingTime = Carbon::createFromFormat('H:i', $timeString);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Invalid booking time format.'], 400);
+        }
 
         $additionalCharges = ($request->input('ball') * 500) + ($request->input('bib') * 200);
-
         $totalPrice = 2500 + $additionalCharges;
-        $bookingTime = Carbon::createFromFormat('h:i A', $request->input('booking_time'));
-
-
-        $duration = 90;
-
-
+        $duration = 90; // Duration of the booking in minutes
         $endTime = $bookingTime->copy()->addMinutes($duration);
 
-
-
-        $existingBooking = Bookings::where(function ($query) use ($bookingTime, $endTime) {
-            $query->whereBetween('booking_time', [$bookingTime, $endTime])
-                ->orWhereBetween('booking_end_time', [$bookingTime, $endTime]);
-        })->where('booking_status', '<>', 'cancelled')
-            ->where('booking_status', '<>', 'rejected')
-            ->where('booking_status', '<>', 'completed')
-            ->where('booking_status', '<>', 'expired')
+        // Check if there is any existing booking overlapping with the requested time
+        $existingBooking = Bookings::where('turf_id', $request->turf_id)
+            ->where(function ($query) use ($bookingTime, $endTime) {
+                $query->whereBetween('booking_time', [$bookingTime, $endTime])
+                    ->orWhereBetween('booking_end_time', [$bookingTime, $endTime])
+                    ->orWhere(function ($query) use ($bookingTime, $endTime) {
+                        $query->where('booking_time', '<=', $bookingTime)
+                            ->where('booking_end_time', '>=', $endTime);
+                    });
+            })
+            ->whereNotIn('booking_status', ['cancelled', 'rejected', 'completed', 'expired'])
             ->exists();
 
         if ($existingBooking) {
             return response()->json(['error' => 'This time slot is already booked.'], 400);
         }
 
+        $turf = Turfs::find($request->turf_id);
+        if (!$turf) {
+            return response()->json(['error' => 'Turf not found.'], 404);
+        }
+
+        // Create the booking
         $booking = Bookings::create([
             "user_id" => $request->user()->id,
             "turf_id" => $request->turf_id,
@@ -66,10 +79,11 @@ class BookingsController extends Controller
             "bib" => $request->bib,
         ]);
 
-
-        $turfCreator = $booking->turf->creator;
-        $turfCreator->notify(new BookingMadeNotification($booking));
-
+        // Notify the creator of the turf
+        if ($turf->creator) {
+            $turf->creator->notify(new BookingMadeNotification($booking));
+        }
+        
         return response()->json($booking);
     }
 
@@ -82,11 +96,9 @@ class BookingsController extends Controller
 
         $booking = Bookings::findOrFail($id);
 
-
         if ($booking->user_id !== $request->user()->id) {
             return response()->json(['error' => 'Unauthorized'], 401);
         }
-
 
         $booking->update([
             'rating' => $request->rating,
