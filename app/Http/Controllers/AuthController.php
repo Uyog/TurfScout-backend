@@ -5,10 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
-use Illuminate\Auth\Events\PasswordReset;
-use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Facades\Password;
-use Illuminate\Support\Str;
+
 
 class AuthController extends Controller
 {
@@ -25,8 +22,7 @@ class AuthController extends Controller
             'name' => $request['name'],
             'email' => $request['email'],
             'password' => Hash::make($request['password']),
-            'role' => 'user', // Assign 'user' role by default
-            
+            'role' => 'user', 
         ]);
 
         $token = $user->createToken('myAppToken')->plainTextToken;
@@ -46,11 +42,18 @@ class AuthController extends Controller
             'password' => 'required|confirmed|min:8',
         ]);
 
+        $existingUser = User::where('email', $request->email)->where('role', 'user')->first();
+
+        if ($existingUser) {
+            return response()->json(['error' => 'You already have a user account. Please login instead.'], 400);
+        }
+
+
         $user = User::create([
             'name' => $request['name'],
             'email' => $request['email'],
             'password' => Hash::make($request['password']),
-            'role' => 'creator', // Assign 'creator' role for registration from another app
+            'role' => 'creator',
         ]);
 
         $token = $user->createToken('myAppToken')->plainTextToken;
@@ -62,9 +65,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-
-
-
     public function login(Request $request)
     {
         $request->validate([
@@ -74,8 +74,13 @@ class AuthController extends Controller
 
         $user = User::where('email', $request->email)->first();
 
+    
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json(['error' => 'Invalid email or password'], 401);
+        }
+
+        if ($user->role === 'creator') {
+            return response()->json(['error' => 'Creators cannot login to this app. Please create a user account.'], 401);
         }
 
         $token = $user->createToken('myAppToken')->plainTextToken;
@@ -89,10 +94,6 @@ class AuthController extends Controller
         ], 201);
     }
 
-
-
-
-
     
     public function logout(Request $request)
     {
@@ -102,6 +103,4 @@ class AuthController extends Controller
             'message' => 'Logged out successfully',
         ], 200);
     }
-
-  
 }

@@ -49,8 +49,13 @@ Route::middleware(['auth:sanctum', 'role:creator'])->group(function () {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/register-app', [AuthController::class, 'registerFromOtherApp']);
 Route::post('/login', [AuthController::class, 'login']);
+
+
+// Password reset routes
 Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->name('forgot-password');
-Route::get('/reset-password', [ResetPasswordController::class, 'showResetForm'])->name('reset_password');
+Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->name('reset_password');
+Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->name('password.update');
+
 
 
 

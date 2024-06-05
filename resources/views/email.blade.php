@@ -1,45 +1,45 @@
 <style>
     body {
-        background-color: black; /* Set background color to black */
-        color: limegreen; /* Set text color to lime green */
-        font-family: Arial, sans-serif; /* Optional: Set font family */
+        background-color: black; 
+        color: limegreen; 
+        font-family: Arial, sans-serif; 
     }
 
     form {
-        margin: 0 auto; /* Center the form horizontally */
-        width: 300px; /* Adjust width as needed */
+        margin: 0 auto;
+        width: 300px; 
         padding: 20px;
-        border: 1px solid limegreen; /* Add border for visibility */
-        border-radius: 10px; /* Optional: Add border radius */
-        background-color: #111; /* Darker shade of black for better contrast */
+        border: 1px solid limegreen; 
+        border-radius: 10px; 
+        background-color: #111; 
     }
 
     label {
-        display: block; /* Ensure labels are displayed on new lines */
-        margin-bottom: 10px; /* Add some spacing between label and input */
+        display: block; 
+        margin-bottom: 10px; 
     }
 
     input[type="email"] {
-        width: 100%; /* Make input fields full width */
-        padding: 10px; /* Add padding for better appearance */
-        margin-bottom: 20px; /* Add some spacing between input fields */
-        background-color: #333; /* Darker shade for input background */
-        border: none; /* Remove default input border */
-        color: limegreen; /* Set text color to lime green */
-        border-radius: 5px; /* Optional: Add border radius */
+        width: 100%;
+        padding: 10px; 
+        margin-bottom: 20px; 
+        background-color: #333; 
+        border: none;
+        color: limegreen; 
+        border-radius: 5px; 
     }
 
     button[type="submit"] {
-        background-color: limegreen; /* Set button background color */
-        color: black; /* Set button text color */
-        padding: 10px 20px; /* Add padding for better appearance */
-        border: none; /* Remove default button border */
-        border-radius: 5px; /* Optional: Add border radius */
-        cursor: pointer; /* Change cursor to pointer on hover */
+        background-color: limegreen; 
+        color: black; 
+        padding: 10px 20px; 
+        border: none; 
+        border-radius: 5px; 
+        cursor: pointer; 
     }
 
     button[type="submit"]:hover {
-        background-color: #0f0; /* Change background color on hover */
+        background-color: #0f0; 
     }
 </style>
 
