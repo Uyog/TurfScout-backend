@@ -28,7 +28,8 @@ use Illuminate\Validation\UnauthorizedException;
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [UserController::class, 'currentUser']);
-    Route::post('/user/{id}', [UserController::class, 'updateName']);
+    Route::post('/user/profile-picture', [UserController::class, 'updateProfilePicture']);
+    Route::post('/user/{id}/name', [UserController::class, 'updateName']);
     Route::delete('/user', [UserController::class, 'deleteAccount']);
     Route::get('/turfs/search', [TurfsController::class, 'search']);
     Route::get('/turfs/{id}', [TurfsController::class, 'readTurf']);

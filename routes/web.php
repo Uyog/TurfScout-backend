@@ -20,4 +20,4 @@ Route::get('/', function () {
 Route::get('forgot-password', 'App\Http\Controllers\ForgotPasswordController@showLinkRequestForm')->name('password.request');
 Route::post('forgot-password', 'App\Http\Controllers\ForgotPasswordController@sendResetLinkEmail')->name('password.email');
 Route::get('reset-password/{token}', 'App\Http\Controllers\ResetPasswordController@showResetForm')->name('password.reset');
-Route::post('reset-password', 'App\Http\Controllers\ResetPasswordController@reset')->name('password.update');
+Route::post('reset-password', 'App\Http\Controllers\ResetPasswordController@reset')->name('password.update.web');
