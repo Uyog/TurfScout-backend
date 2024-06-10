@@ -50,6 +50,7 @@ Route::middleware(['auth:sanctum', 'role:creator'])->group(function () {
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/register-app', [AuthController::class, 'registerFromOtherApp']);
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/login-creator', [AuthController::class, 'loginAsCreator']);
 
 
 // Password reset routes

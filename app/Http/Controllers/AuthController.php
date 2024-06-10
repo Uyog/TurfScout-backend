@@ -94,6 +94,33 @@ class AuthController extends Controller
         ], 201);
     }
 
+    public function loginAsCreator(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
+            return response()->json(['error' => 'Invalid email or password'], 401);
+        }
+
+        if ($user->role !== 'creator') {
+            return response()->json(['error' => 'Only creators can login to this app.'], 401);
+        }
+
+        $token = $user->createToken('myAppToken')->plainTextToken;
+
+        return response()->json([
+            'user' => $user,
+            'token_type' => 'Bearer',
+            'token' => $token,
+        ], 201);
+    }
+
+
     
     public function logout(Request $request)
     {
