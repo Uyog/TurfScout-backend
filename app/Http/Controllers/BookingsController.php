@@ -20,11 +20,12 @@ class BookingsController extends Controller
         $request->validate([
             "turf_id" => "required|exists:turfs,id",
             "booking_time" => [
-                'required', 
+                'required',
                 'regex:/^(?:[01]\d|2[0-3]):[0-5]\d(?:\s?[APMapm]{2})?$/'
-            ], 
+            ],
             "ball" => "numeric|min:0",
             "bib" => "numeric|min:0",
+            "pitch_number" => "required|integer|min:1",
         ]);
 
         $timeString = $request->input('booking_time');
@@ -41,11 +42,14 @@ class BookingsController extends Controller
 
         $additionalCharges = ($request->input('ball') * 500) + ($request->input('bib') * 200);
         $totalPrice = 2500 + $additionalCharges;
-        $duration = 90; // Duration of the booking in minutes
+        $duration = 90;
         $endTime = $bookingTime->copy()->addMinutes($duration);
 
-        // Check if there is any existing booking overlapping with the requested time
+        $pitchNumber = $request->input('pitch_number');
+
+
         $existingBooking = Bookings::where('turf_id', $request->turf_id)
+            ->where('pitch_number', $pitchNumber)
             ->where(function ($query) use ($bookingTime, $endTime) {
                 $query->whereBetween('booking_time', [$bookingTime, $endTime])
                     ->orWhereBetween('booking_end_time', [$bookingTime, $endTime])
@@ -66,7 +70,10 @@ class BookingsController extends Controller
             return response()->json(['error' => 'Turf not found.'], 404);
         }
 
-        // Create the booking
+        if ($pitchNumber > $turf->number_of_pitches) {
+            return response()->json(['error' => 'Invalid pitch number'], 400);
+        }
+
         $booking = Bookings::create([
             "user_id" => $request->user()->id,
             "turf_id" => $request->turf_id,
@@ -77,13 +84,13 @@ class BookingsController extends Controller
             "booking_end_time" => $endTime,
             "ball" => $request->ball,
             "bib" => $request->bib,
+            "pitch_number" => $pitchNumber,
         ]);
 
-        // Notify the creator of the turf
         if ($turf->creator) {
             $turf->creator->notify(new BookingMadeNotification($booking));
         }
-        
+
         return response()->json($booking);
     }
 

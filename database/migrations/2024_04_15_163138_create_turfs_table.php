@@ -20,6 +20,7 @@ return new class extends Migration
             $table->string("location");
             $table->string("description");
             $table->string("image_url")->nullable();
+            $table->integer("number_of_pitches")->default(1);
             $table->timestamps();
         });
     }

@@ -22,6 +22,7 @@ class Bookings extends Model
         'booking_end_time',
         'ball',
         'bib',
+        'pitch_number',
     ];
 
     protected $casts = [
@@ -39,7 +40,6 @@ class Bookings extends Model
         return $this->belongsTo(Turfs::class);
     }
 
-    // Accessors and Mutators for handling Carbon instances for booking_time and booking_end_time
     public function getBookingTimeAttribute($value)
     {
         return Carbon::parse($value);

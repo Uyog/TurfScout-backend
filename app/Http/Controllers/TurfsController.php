@@ -19,6 +19,7 @@ class TurfsController extends Controller
             'description' => 'required|string',
             'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
             'price' => 'required|numeric',
+            'number_of_pitches' => 'required|integer|min:1',
         ]);
 
         $user = $request->user();
@@ -27,10 +28,10 @@ class TurfsController extends Controller
         }
 
         $image = $request->file('image');
-    $imageName = time() . '.' . $image->getClientOriginalExtension();
-    $imagePath = $image->storeAs('public/turfs', $imageName);
+        $imageName = time() . '.' . $image->getClientOriginalExtension();
+        $imagePath = $image->storeAs('public/turfs', $imageName);
 
-        
+
 
         $turf = Turfs::create([
             'name' => $request->name,
@@ -39,6 +40,7 @@ class TurfsController extends Controller
             'image_url' => Storage::url('turfs/' . $imageName),
             'price' => $request->price,
             'creator_id' => $user->id,
+            'number_of_pitches' => $request->number_of_pitches,
         ]);
 
         if (!$turf) {
@@ -80,42 +82,44 @@ class TurfsController extends Controller
     }
 
     public function updateTurf(Request $request, $id)
-{
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'location' => 'required|string|max:255',
-        'description' => 'required|string',
-        'image' => 'image|mimes:jpeg,png,jpg|max:2048',
-        'price' => 'required|numeric',
-    ]);
-
-    $user = Auth::user();
-    if (!$user || $user->role !== 'creator') {
-        return response()->json(['error' => 'Unauthorized'], 401);
-    }
-
-    try {
-        $turf = Turfs::findOrFail($id);
-
-        if ($request->hasFile('image')) {
-            $filename = Storage::url($request->file('image')->store('turfs', 'public'));
-        } else {
-            $filename = $turf->image_url;
-        }
-
-        $turf->update([
-            'name' => $request->name,
-            'location' => $request->location,
-            'description' => $request->description,
-            'image_url' => $filename,
-            'price' => $request->price,
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'location' => 'required|string|max:255',
+            'description' => 'required|string',
+            'image' => 'image|mimes:jpeg,png,jpg|max:2048',
+            'price' => 'required|numeric',
+            'number_of_pitches' => 'required|integer|min:1', 
         ]);
 
-        return response()->json($turf);
-    } catch (\Exception $e) {
-        return response()->json(['error' => 'No Turf Was Found With The ID: ' . $id], 404);
+        $user = Auth::user();
+        if (!$user || $user->role !== 'creator') {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        try {
+            $turf = Turfs::findOrFail($id);
+
+            if ($request->hasFile('image')) {
+                $filename = Storage::url($request->file('image')->store('turfs', 'public'));
+            } else {
+                $filename = $turf->image_url;
+            }
+
+            $turf->update([
+                'name' => $request->name,
+                'location' => $request->location,
+                'description' => $request->description,
+                'image_url' => $filename,
+                'price' => $request->price,
+                'number_of_pitches' => $request->number_of_pitches,
+            ]);
+
+            return response()->json($turf);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'No Turf Was Found With The ID: ' . $id], 404);
+        }
     }
-}
 
 
     public function deleteTurf($id)
@@ -143,7 +147,4 @@ class TurfsController extends Controller
         $url = Storage::url("turfs/{$filename}");
         return $url;
     }
-
-    
 }
-
