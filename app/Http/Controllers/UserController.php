@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Turfs;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -12,7 +13,15 @@ class UserController extends Controller
     public function currentUser()
     {
         $user = Auth::user();
-        return response()->json($user);
+
+        $turfsCreated = Turfs::where('creator_id', $user->id)->count();
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'profile_picture' => $user->profile_picture,
+            'turfs_created' => $turfsCreated,
+        ]);
     }
 
     public function updateName(Request $request, $id)
@@ -59,21 +68,21 @@ class UserController extends Controller
     
         $user = Auth::user();
     
-        // Check if $user is an instance of User
+       
         if (!$user instanceof User) {
             return response()->json(['error' => 'Authenticated user not found or invalid'], 500);
         }
         
         if ($request->hasFile('profile_picture')) {
-            // Delete the old profile picture if it exists
+        
             if ($user->profile_picture) {
                 Storage::delete('public/' . $user->profile_picture);
             }
     
-            // Store the new profile picture
+            
             $path = $request->file('profile_picture')->store('profile_pictures', 'public');
             
-            // Update user's profile picture path
+          
             $user->profile_picture = $path;
             $user->save();
         }
