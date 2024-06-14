@@ -107,6 +107,10 @@ class BookingsController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
+        if (Carbon::now()->lessThan($booking->booking_end_time)) {
+            return response()->json(['error' => 'You cannot rate the turf before your session ends.'], 400);
+        }
+
         $booking->update([
             'rating' => $request->rating,
             'review' => $request->review,
