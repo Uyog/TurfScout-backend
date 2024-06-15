@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Bookings;
+use App\Models\Ratings;
 use Illuminate\Http\Request;
 use App\Models\Turfs;
 use Carbon\Carbon;
@@ -46,7 +47,6 @@ class BookingsController extends Controller
         $endTime = $bookingTime->copy()->addMinutes($duration);
 
         $pitchNumber = $request->input('pitch_number');
-
 
         $existingBooking = Bookings::where('turf_id', $request->turf_id)
             ->where('pitch_number', $pitchNumber)
@@ -95,27 +95,46 @@ class BookingsController extends Controller
     }
 
     public function submitRating(Request $request, $id)
-    {
-        $request->validate([
-            'rating' => 'required|numeric|min:1|max:5',
-            'review' => 'nullable|string|max:255',
-        ]);
-
-        $booking = Bookings::findOrFail($id);
-
-        if ($booking->user_id !== $request->user()->id) {
-            return response()->json(['error' => 'Unauthorized'], 401);
-        }
-
-        if (Carbon::now()->lessThan($booking->booking_end_time)) {
-            return response()->json(['error' => 'You cannot rate the turf before your session ends.'], 400);
-        }
-
-        $booking->update([
-            'rating' => $request->rating,
-            'review' => $request->review,
-        ]);
-
-        return response()->json(['message' => 'Rating and review submitted successfully']);
+{
+    $user = $request->user();
+    if (!$user) {
+        throw new UnauthorizedException('You must be logged in to rate a booking.');
     }
+
+    $booking = Bookings::find($id);
+    if (!$booking) {
+        return response()->json(['error' => 'Booking not found.'], 404);
+    }
+
+    // Ensure the user owns the booking
+    if ($booking->user_id !== $user->id) {
+        return response()->json(['error' => 'You are not authorized to rate this booking.'], 403);
+    }
+
+    // Set the application timezone to East African Time (EAT)
+    config(['app.timezone' => 'Africa/Nairobi']);
+
+    // Set the timezone for comparison
+    $bookingEndTime = Carbon::parse($booking->booking_end_time)->timezone('Africa/Nairobi');
+    $currentDateTime = Carbon::now('Africa/Nairobi');
+
+    // Check if the booking duration is over
+    if ($bookingEndTime->isFuture()) {
+        return response()->json(['error' => 'You can only rate after the booking duration has ended.'], 400);
+    }
+
+    // Validate rating input
+    $request->validate([
+        'rating' => 'required|integer|min:1|max:5',
+        'review' => 'nullable|string',
+    ]);
+
+    // Create or update the rating
+    $rating = Ratings::updateOrCreate(
+        ['booking_id' => $booking->id, 'user_id' => $user->id, 'turf_id' => $booking->turf_id],
+        ['rating' => $request->rating, 'review' => $request->review]
+    );
+
+    return response()->json($rating, 201);
+}
 }

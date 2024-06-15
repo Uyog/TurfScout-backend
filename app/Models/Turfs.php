@@ -19,4 +19,13 @@ class Turfs extends Model
         "creator_id",
         "number_of_pitches"
     ];
+    public function bookings()
+    {
+        return $this->hasMany(Bookings::class);
+    }
+
+    public function ratings()
+    {
+        return $this->hasMany(Ratings::class);
+    }
 }

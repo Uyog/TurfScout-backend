@@ -16,8 +16,6 @@ class Bookings extends Model
         'duration',
         'total_price',
         'booking_status',
-        'rating',
-        'review',
         'booking_time',
         'booking_end_time',
         'ball',
@@ -38,6 +36,11 @@ class Bookings extends Model
     public function turf()
     {
         return $this->belongsTo(Turfs::class);
+    }
+
+    public function rating()
+    {
+        return $this->hasOne(Ratings::class);
     }
 
     public function getBookingTimeAttribute($value)

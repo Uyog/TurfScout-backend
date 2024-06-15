@@ -19,8 +19,6 @@ return new class extends Migration
             $table->double('total_price');
             $table->string('booking_status');
             $table->integer('pitch_number');
-            $table->unsignedInteger('rating')->nullable();
-            $table->text('review')->nullable();
             $table->dateTime('booking_time');
             $table->dateTime('booking_end_time');
             $table->unsignedInteger('ball')->default(0);
