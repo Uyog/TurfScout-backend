@@ -36,6 +36,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/turfs/images', [TurfsController::class, 'getTurfImageUrls']);
     Route::post("/booking", [BookingsController::class, 'createBooking']);
     Route::post("/booking/{id}/rating", [BookingsController::class, 'submitRating']); 
+    Route::get("/bookings", [BookingsController::class, 'getUserBookings']); 
+    Route::post("/booking/{id}/cancel", [BookingsController::class, 'cancelBooking']); 
 });
 
 Route::middleware(['auth:sanctum', 'role:creator'])->group(function () {

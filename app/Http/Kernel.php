@@ -3,6 +3,7 @@
 namespace App\Http;
 
 use Illuminate\Foundation\Http\Kernel as HttpKernel;
+use Illuminate\Console\Scheduling\Schedule;
 use Spatie\Permission\Middlewares\RoleMiddleware;
 use Spatie\Permission\Middlewares\PermissionMiddleware;
 
@@ -24,6 +25,7 @@ class Kernel extends HttpKernel
         \App\Http\Middleware\TrimStrings::class,
         \Illuminate\Foundation\Http\Middleware\ConvertEmptyStringsToNull::class,
         \App\Http\Middleware\CorsMiddleware::class,
+        \App\Http\Middleware\SetTimezone::class,
     ];
 
     /**
@@ -73,4 +75,15 @@ class Kernel extends HttpKernel
         // Other middleware...
         'role' => \App\Http\Middleware\RoleMiddleware::class,
     ];
+     /**
+     * Define the application's command schedule.
+     *
+     * @param  \Illuminate\Console\Scheduling\Schedule  $schedule
+     * @return void
+     */
+    protected function schedule(Schedule $schedule)
+    {
+        $schedule->call('App\Http\Controllers\BookingsController@updateInProgressBookings')->everyMinute();
+        $schedule->call('App\Http\Controllers\BookingsController@updateCompletedBookings')->everyMinute(); 
+    }
 }

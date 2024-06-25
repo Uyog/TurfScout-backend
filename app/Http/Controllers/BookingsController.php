@@ -4,10 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Bookings;
 use App\Models\Ratings;
-use Illuminate\Http\Request;
 use App\Models\Turfs;
 use Carbon\Carbon;
 use App\Notifications\BookingMadeNotification;
+use Illuminate\Http\Request;
 use Illuminate\Validation\UnauthorizedException;
 
 class BookingsController extends Controller
@@ -30,14 +30,9 @@ class BookingsController extends Controller
         ]);
 
         $timeString = $request->input('booking_time');
+        $bookingTime = $this->parseBookingTime($timeString);
 
-        try {
-            if (strpos($timeString, 'AM') !== false || strpos($timeString, 'PM') !== false) {
-                $bookingTime = Carbon::createFromFormat('h:i A', $timeString);
-            } else {
-                $bookingTime = Carbon::createFromFormat('H:i', $timeString);
-            }
-        } catch (\Exception $e) {
+        if (!$bookingTime) {
             return response()->json(['error' => 'Invalid booking time format.'], 400);
         }
 
@@ -45,41 +40,25 @@ class BookingsController extends Controller
         $totalPrice = 2500 + $additionalCharges;
         $duration = 90;
         $endTime = $bookingTime->copy()->addMinutes($duration);
-
         $pitchNumber = $request->input('pitch_number');
 
-        $existingBooking = Bookings::where('turf_id', $request->turf_id)
-            ->where('pitch_number', $pitchNumber)
-            ->where(function ($query) use ($bookingTime, $endTime) {
-                $query->whereBetween('booking_time', [$bookingTime, $endTime])
-                    ->orWhereBetween('booking_end_time', [$bookingTime, $endTime])
-                    ->orWhere(function ($query) use ($bookingTime, $endTime) {
-                        $query->where('booking_time', '<=', $bookingTime)
-                            ->where('booking_end_time', '>=', $endTime);
-                    });
-            })
-            ->whereNotIn('booking_status', ['cancelled', 'rejected', 'completed', 'expired'])
-            ->exists();
-
-        if ($existingBooking) {
+        if ($this->isBookingSlotTaken($request->turf_id, $pitchNumber, $bookingTime, $endTime)) {
             return response()->json(['error' => 'This time slot is already booked.'], 400);
         }
 
         $turf = Turfs::find($request->turf_id);
-        if (!$turf) {
-            return response()->json(['error' => 'Turf not found.'], 404);
+        if (!$turf || $pitchNumber > $turf->number_of_pitches) {
+            return response()->json(['error' => 'Invalid pitch number or turf not found'], 400);
         }
 
-        if ($pitchNumber > $turf->number_of_pitches) {
-            return response()->json(['error' => 'Invalid pitch number'], 400);
-        }
+        $initialStatus = $this->determineInitialStatus($bookingTime, $endTime);
 
         $booking = Bookings::create([
             "user_id" => $request->user()->id,
             "turf_id" => $request->turf_id,
             "duration" => $duration,
             "total_price" => $totalPrice,
-            "booking_status" => "pending",
+            "booking_status" => $initialStatus,
             "booking_time" => $bookingTime,
             "booking_end_time" => $endTime,
             "ball" => $request->ball,
@@ -94,47 +73,133 @@ class BookingsController extends Controller
         return response()->json($booking);
     }
 
+    private function parseBookingTime($timeString)
+    {
+        try {
+            if (strpos($timeString, 'AM') !== false || strpos($timeString, 'PM') !== false) {
+                return Carbon::createFromFormat('h:i A', $timeString);
+            } else {
+                return Carbon::createFromFormat('H:i', $timeString);
+            }
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    private function isBookingSlotTaken($turfId, $pitchNumber, $bookingTime, $endTime)
+    {
+        return Bookings::where('turf_id', $turfId)
+            ->where('pitch_number', $pitchNumber)
+            ->where(function ($query) use ($bookingTime, $endTime) {
+                $query->whereBetween('booking_time', [$bookingTime, $endTime])
+                    ->orWhereBetween('booking_end_time', [$bookingTime, $endTime])
+                    ->orWhere(function ($query) use ($bookingTime, $endTime) {
+                        $query->where('booking_time', '<=', $bookingTime)
+                            ->where('booking_end_time', '>=', $endTime);
+                    });
+            })
+            ->whereNotIn('booking_status', ['cancelled', 'rejected', 'completed', 'expired'])
+            ->exists();
+    }
+
+    private function determineInitialStatus($bookingTime, $endTime)
+    {
+        $currentTime = Carbon::now();
+        if ($currentTime->between($bookingTime, $endTime)) {
+            return 'in progress';
+        } elseif ($currentTime->gt($endTime)) {
+            return 'completed';
+        } else {
+            return 'pending';
+        }
+    }
+
     public function submitRating(Request $request, $id)
-{
-    $user = $request->user();
-    if (!$user) {
-        throw new UnauthorizedException('You must be logged in to rate a booking.');
+    {
+        $user = $request->user();
+        if (!$user) {
+            throw new UnauthorizedException('You must be logged in to rate a booking.');
+        }
+
+        $booking = Bookings::find($id);
+        if (!$booking || $booking->user_id !== $user->id) {
+            return response()->json(['error' => $booking ? 'You are not authorized to rate this booking.' : 'Booking not found.'], $booking ? 403 : 404);
+        }
+
+        if (Carbon::now()->isBefore(Carbon::parse($booking->booking_end_time))) {
+            return response()->json(['error' => 'You can only rate after the booking duration has ended.'], 400);
+        }
+
+        $request->validate([
+            'rating' => 'required|integer|min:1|max:5',
+            'review' => 'nullable|string',
+        ]);
+
+        $rating = Ratings::updateOrCreate(
+            ['booking_id' => $booking->id, 'user_id' => $user->id, 'turf_id' => $booking->turf_id],
+            ['rating' => $request->rating, 'review' => $request->review]
+        );
+
+        $booking->update(['booking_status' => 'rated']);
+
+        return response()->json($rating, 201);
     }
 
-    $booking = Bookings::find($id);
-    if (!$booking) {
-        return response()->json(['error' => 'Booking not found.'], 404);
+    public function getUserBookings(Request $request)
+    {
+        $user = $request->user();
+        if (!$user) {
+            throw new UnauthorizedException('You must be logged in to view bookings.');
+        }
+
+        $bookings = Bookings::where('user_id', $user->id)->get();
+
+        return response()->json($bookings);
     }
 
-    // Ensure the user owns the booking
-    if ($booking->user_id !== $user->id) {
-        return response()->json(['error' => 'You are not authorized to rate this booking.'], 403);
+    public function cancelBooking(Request $request, $id)
+    {
+        $user = $request->user();
+        if (!$user) {
+            throw new UnauthorizedException('You must be logged in to cancel a booking.');
+        }
+
+        $booking = Bookings::find($id);
+        if (!$booking || $booking->user_id !== $user->id) {
+            return response()->json(['error' => $booking ? 'You are not authorized to cancel this booking.' : 'Booking not found.'], $booking ? 403 : 404);
+        }
+
+        $booking->update(['booking_status' => 'cancelled']);
+
+        return response()->json(['message' => 'Booking cancelled successfully.'], 200);
     }
 
-    // Set the application timezone to East African Time (EAT)
-    config(['app.timezone' => 'Africa/Nairobi']);
+    public function updateCompletedBookings()
+    {
+        $bookings = Bookings::where('booking_end_time', '<', Carbon::now())
+            ->whereNotIn('booking_status', ['completed', 'cancelled', 'rejected', 'expired'])
+            ->get();
 
-    // Set the timezone for comparison
-    $bookingEndTime = Carbon::parse($booking->booking_end_time)->timezone('Africa/Nairobi');
-    $currentDateTime = Carbon::now('Africa/Nairobi');
+        foreach ($bookings as $booking) {
+            $booking->update(['booking_status' => 'completed']);
+        }
 
-    // Check if the booking duration is over
-    if ($bookingEndTime->isFuture()) {
-        return response()->json(['error' => 'You can only rate after the booking duration has ended.'], 400);
+        return response()->json(['message' => 'Booking statuses updated to completed successfully.'], 200);
     }
 
-    // Validate rating input
-    $request->validate([
-        'rating' => 'required|integer|min:1|max:5',
-        'review' => 'nullable|string',
-    ]);
+    public function updateInProgressBookings()
+    {
+        $currentTime = Carbon::now();
 
-    // Create or update the rating
-    $rating = Ratings::updateOrCreate(
-        ['booking_id' => $booking->id, 'user_id' => $user->id, 'turf_id' => $booking->turf_id],
-        ['rating' => $request->rating, 'review' => $request->review]
-    );
+        $bookings = Bookings::where('booking_time', '<=', $currentTime)
+            ->where('booking_end_time', '>=', $currentTime)
+            ->where('booking_status', 'pending')
+            ->get();
 
-    return response()->json($rating, 201);
-}
+        foreach ($bookings as $booking) {
+            $booking->update(['booking_status' => 'in progress']);
+        }
+
+        return response()->json(['message' => 'Booking statuses updated to in progress successfully.'], 200);
+    }
 }
