@@ -152,7 +152,9 @@ class BookingsController extends Controller
             throw new UnauthorizedException('You must be logged in to view bookings.');
         }
 
-        $bookings = Bookings::where('user_id', $user->id)->get();
+        $bookings = Bookings::where('user_id', $user->id)
+        ->with('turf:id,name,location')
+        ->get();
 
         return response()->json($bookings);
     }

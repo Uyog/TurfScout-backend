@@ -28,6 +28,11 @@ class Bookings extends Model
         'booking_end_time' => 'datetime',
     ];
 
+    protected $appends = [
+        'formatted_booking_date',
+        'formatted_booking_time',
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
@@ -62,4 +67,15 @@ class Bookings extends Model
     {
         $this->attributes['booking_end_time'] = Carbon::parse($value);
     }
+
+    public function getFormattedBookingDateAttribute()
+    {
+        return $this->booking_time->format('F j, Y');
+    }
+
+    public function getFormattedBookingTimeAttribute()
+    {
+        return $this->booking_time->format('g:i A') . ' - ' . $this->booking_end_time->format('g:i A');
+    }
+
 }
